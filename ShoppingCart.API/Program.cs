@@ -1,5 +1,9 @@
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ShoppingCart.API.Errors;
+using ShoppingCart.API.Extensions;
 using ShoppingCart.API.Helpers;
+using ShoppingCart.API.Middleware;
 using ShoppingCart.Core.Interfaces;
 using ShoppingCart.Infrastructure;
 using ShoppingCart.Infrastructure.Data;
@@ -8,13 +12,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddScoped<NRShoppingCartContext>();
-builder.Services.AddScoped<IProductRepository, ProductRepository>();
-builder.Services.AddScoped(typeof(IGenericRepository<>), (typeof(GenericRepository<>)));
 builder.Services.AddAutoMapper(typeof(MappingProfiles));
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddApplicationServices();
+builder.Services.AddSwaggerDocumentation();
 
 var app = builder.Build();
 
@@ -34,12 +36,17 @@ using (var scope = app.Services.CreateScope())
         logger.LogError(ex, "Error occured while migrating database");
     }
 }
+
+app.UseMiddleware<ExceptionMiddleware>();
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseStatusCodePagesWithReExecute("/errors/{0}");
 
 app.UseHttpsRedirection();
 
