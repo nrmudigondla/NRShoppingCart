@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ShoppingCart.API.DTOs;
+using ShoppingCart.API.Errors;
 using ShoppingCart.Core.Entities;
 using ShoppingCart.Core.Interfaces;
 using ShoppingCart.Core.Specifications;
@@ -10,9 +11,7 @@ using ShoppingCart.Infrastructure;
 
 namespace ShoppingCart.API.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ProductController : ControllerBase
+    public class ProductController : BaseApiController
     {
         private readonly IGenericRepository<Product> _productRepo;
         private readonly IGenericRepository<ProductBrand> _productBrandRepo;
@@ -39,10 +38,13 @@ namespace ShoppingCart.API.Controllers
             return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDTO>>(products));
         }
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<ProductToReturnDTO>> GetProduct(int id)
         {
             var spec = new ProductsWithTypesAndBrandsSpecification(id);
             var product = await _productRepo.GetEntityWithSpec(spec);
+            if(product == null) return NotFound(new ApiResponse(404));
             return Ok(_mapper.Map<Product, ProductToReturnDTO>(product));
         }
         [HttpGet("brands")]
