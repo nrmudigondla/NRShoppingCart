@@ -30,13 +30,16 @@ namespace ShoppingCart.API.Controllers
             this._prodcutTypeRepo = prodcutTypeRepo;
             this._mapper = mapper;
         }
+
         [HttpGet]
-        public async Task<ActionResult<IReadOnlyList<ProductToReturnDTO>>> GetProducts()
+        public async Task<ActionResult<IReadOnlyList<ProductToReturnDTO>>> GetProducts(
+            string sort, int? brandId, int? typeId)
         {
-            var spec = new ProductsWithTypesAndBrandsSpecification();
+            var spec = new ProductsWithTypesAndBrandsSpecification(sort, brandId, typeId);
             var products = await _productRepo.ListAsync(spec);
             return Ok(_mapper.Map<IReadOnlyList<Product>, IReadOnlyList<ProductToReturnDTO>>(products));
         }
+
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ApiResponse), StatusCodes.Status404NotFound)]
@@ -47,12 +50,14 @@ namespace ShoppingCart.API.Controllers
             if(product == null) return NotFound(new ApiResponse(404));
             return Ok(_mapper.Map<Product, ProductToReturnDTO>(product));
         }
+
         [HttpGet("brands")]
         public async Task<ActionResult<List<ProductBrand>>> GetProductBrands()
         {
             var productBrands = await _productBrandRepo.GetAllAsync();
             return Ok(productBrands);
         }
+
         [HttpGet("types")]
         public async Task<ActionResult<List<ProductType>>> GetProductTypes()
         {
